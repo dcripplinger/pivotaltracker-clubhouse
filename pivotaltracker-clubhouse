@@ -33,6 +33,7 @@ def _upload_batch(cstories, ctoken):
 
 
 def _fetch_batch(offset, purl, pheaders, pquery):
+    pquery['offset'] = offset
     response = requests.get(purl, headers=pheaders, params=pquery)
     assert response.status_code == 200, response.text
     pstories = response.json()
