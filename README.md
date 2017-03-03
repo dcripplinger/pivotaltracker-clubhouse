@@ -2,6 +2,7 @@
 Simple tool to transfer stories from Pivotal Tracker to Clubhouse.
 
 ## Usage
+```
 usage: pivotaltracker-clubhouse [-h] --ptoken PTOKEN --ctoken CTOKEN
                                 --pproject PPROJECT --cproject CPROJECT
 
@@ -16,6 +17,7 @@ required arguments:
   --pproject PPROJECT  The Pivotal Tracker project ID from which to transfer
                        stories.
   --cproject CPROJECT  The Clubhouse project ID to which to transfer stories.
+```
 
 ## Notes
 Only non-accepted stories in Pivotal are transferred. Release-type stories are not transferred. Some basic information, such as
