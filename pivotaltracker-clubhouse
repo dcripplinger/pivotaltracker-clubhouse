@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+
+import argparse
+import requests
+
+
+def _run():
+    args = _get_args()
+    purl = 'https://www.pivotaltracker.com/services/v5/projects/{0}/stories'.format(args.pproject)
+    pheaders = {'X-TrackerToken': args.ptoken}
+    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted'}
+    offset = 0
+    response = requests.head(purl, headers=pheaders, params=pquery)
+    assert response.status_code == 200, response.text
+    total = int(response.headers['x-tracker-pagination-total'])
+    limit = int(response.headers['x-tracker-pagination-limit'])
+
+    while offset < total:
+        print "offset={0}, batch_size={1}, total={2}".format(offset, limit, total)
+        pstories, limit, offset, total = _fetch_batch(offset, purl, pheaders, pquery)
+        cstories = [_convert_story(pstory, args.cproject) for pstory in pstories]
+        _upload_batch(cstories, args.ctoken)
+        offset += limit
+
+
+def _upload_batch(cstories, ctoken):
+    response = requests.post(
+        'https://api.clubhouse.io/api/v1/stories/bulk',
+        params = {'token': ctoken},
+        json = {'stories': cstories},
+    )
+    assert response.status_code == 201, response.text
+
+
+def _fetch_batch(offset, purl, pheaders, pquery):
+    response = requests.get(purl, headers=pheaders, params=pquery)
+    assert response.status_code == 200, response.text
+    pstories = response.json()
+    limit = int(response.headers['x-tracker-pagination-limit'])
+    offset = int(response.headers['x-tracker-pagination-offset'])
+    total = int(response.headers['x-tracker-pagination-total'])
+    return pstories, limit, offset, total
+
+
+def _get_args():
+    parser = argparse.ArgumentParser(description='Transfer stories from Pivotal Tracker to Clubhouse.')
+    parser.add_argument(
+        '--ptoken', required=True,
+        help="The app token of the Pivotal Tracker user. See https://www.pivotaltracker.com/help/articles/api_token/",
+    )
+    parser.add_argument(
+        '--ctoken', required=True,
+        help="An app token of the Clubhouse user. See https://clubhouse.io/api/v1/#authentication",
+    )
+    parser.add_argument(
+        '--pproject', required=True,
+        help="The Pivotal Tracker project ID from which to transfer stories.",
+    )
+    parser.add_argument(
+        '--cproject', required=True,
+        help="The Clubhouse project ID to which to transfer stories.",
+    )
+    return parser.parse_args()
+
+
+def _convert_story(pstory, cproject):
+    return {
+        'name': pstory.get('name', 'Imported from Pivotal Tracker'),
+        'project_id': cproject,
+        'description': pstory.get('description', ''),
+        'external_id': str(pstory.get('id', '')),
+        'labels': [_convert_label(plabel) for plabel in pstory.get('labels', [])] + [{'name': 'pivotal'}],
+        'story_type': pstory.get('story_type'),
+        'tasks': [_convert_task(ptask) for ptask in pstory.get('tasks', [])],
+    }
+
+
+def _convert_task(ptask):
+    return {
+        'complete': ptask.get('complete'),
+        'description': ptask.get('description'),
+    }
+
+
+def _convert_label(plabel):
+    return {
+        'name': plabel['name'],
+    }
+
+
+if __name__ == '__main__':
+    _run()
