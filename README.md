@@ -20,8 +20,8 @@ required arguments:
 ```
 
 ## API Token Retrieval Instructions
-https://www.pivotaltracker.com/help/articles/api_token/
-https://clubhouse.io/api/v1/#authentication
+* https://www.pivotaltracker.com/help/articles/api_token/
+* https://clubhouse.io/api/v1/#authentication
 
 ## Notes
 Only non-accepted stories in Pivotal are transferred. Release-type stories are not transferred. Some basic information, such as
