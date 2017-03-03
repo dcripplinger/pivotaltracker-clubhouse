@@ -19,6 +19,10 @@ required arguments:
   --cproject CPROJECT  The Clubhouse project ID to which to transfer stories.
 ```
 
+## API Token Retrieval Instructions
+https://www.pivotaltracker.com/help/articles/api_token/
+https://clubhouse.io/api/v1/#authentication
+
 ## Notes
 Only non-accepted stories in Pivotal are transferred. Release-type stories are not transferred. Some basic information, such as
 the name, story type, tasks, and labels are preserved. Not all information is preserved. See the code for details. The created
