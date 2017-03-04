@@ -1,7 +1,7 @@
 # pivotaltracker-clubhouse
 Simple tool to transfer stories from Pivotal Tracker to Clubhouse.
 
-# Python Package Dependencies
+## Python Package Dependencies
 I'm assuming you'll use pip to install them.
 * requests 2.7.0 or above
 
