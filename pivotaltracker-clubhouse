@@ -8,7 +8,7 @@ def _run():
     args = _get_args()
     purl = 'https://www.pivotaltracker.com/services/v5/projects/{0}/stories'.format(args.pproject)
     pheaders = {'X-TrackerToken': args.ptoken}
-    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted'}
+    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted AND label:clubhouse'}
     offset = 0
     response = requests.head(purl, headers=pheaders, params=pquery)
     assert response.status_code == 200, response.text
@@ -19,7 +19,12 @@ def _run():
         print "offset={0}, batch_size={1}, total={2}".format(offset, limit, total)
         pstories, limit, offset, total = _fetch_batch(offset, purl, pheaders, pquery)
         cstories = [_convert_story(pstory, args.cproject) for pstory in pstories]
-        _upload_batch(cstories, args.ctoken)
+        if args.dry_run:
+            print '{} total stories retrieved: '.format(len(cstories))
+            for story in cstories:
+                print ' {}, type: {}'.format(story['name'], story['story_type'])
+        else:
+            _upload_batch(cstories, args.ctoken)
         offset += limit
 
 
@@ -45,6 +50,10 @@ def _fetch_batch(offset, purl, pheaders, pquery):
 
 def _get_args():
     parser = argparse.ArgumentParser(description='Transfer stories from Pivotal Tracker to Clubhouse.')
+    parser.add_argument(
+        '--dry-run', required=False, default=False,
+        help="Dry run only"
+    )
     parser.add_argument(
         '--ptoken', required=True,
         help="The app token of the Pivotal Tracker user. See https://www.pivotaltracker.com/help/articles/api_token/",
