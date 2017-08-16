@@ -8,7 +8,7 @@ def _run():
     args = _get_args()
     purl = 'https://www.pivotaltracker.com/services/v5/projects/{0}/stories'.format(args.pproject)
     pheaders = {'X-TrackerToken': args.ptoken}
-    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted AND label:clubhouse'}
+    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted'}
     offset = 0
     response = requests.head(purl, headers=pheaders, params=pquery)
     assert response.status_code == 200, response.text
