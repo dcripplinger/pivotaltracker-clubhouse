@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-
+from pprint import pprint
 import argparse
 import requests
-
+import time
 
 def _run():
     args = _get_args()
     purl = 'https://www.pivotaltracker.com/services/v5/projects/{0}/stories'.format(args.pproject)
     pheaders = {'X-TrackerToken': args.ptoken}
-    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted AND label:clubhouse'}
+    pquery = {'filter': 'type:feature,chore,bug AND -state:accepted'}
     offset = 0
     response = requests.head(purl, headers=pheaders, params=pquery)
     assert response.status_code == 200, response.text
@@ -18,7 +18,7 @@ def _run():
     while offset < total:
         print "offset={0}, batch_size={1}, total={2}".format(offset, limit, total)
         pstories, limit, offset, total = _fetch_batch(offset, purl, pheaders, pquery)
-        cstories = [_convert_story(pstory, args.cproject) for pstory in pstories]
+        cstories = [_convert_story(pstory, args) for pstory in pstories]
         if args.dry_run:
             print '{} total stories retrieved: '.format(len(cstories))
             for story in cstories:
@@ -35,6 +35,9 @@ def _upload_batch(cstories, ctoken):
         json = {'stories': cstories},
     )
     assert response.status_code == 201, response.text
+    time.sleep(2)
+    pprint("Hit clubhouse endpoint...")
+    pprint(cstories)
 
 
 def _fetch_batch(offset, purl, pheaders, pquery):
@@ -72,20 +75,35 @@ def _get_args():
     )
     return parser.parse_args()
 
+def get_tasks(story_id, args):
+    purl = 'https://www.pivotaltracker.com/services/v5/projects/{0}/stories/{1}/tasks'.format(args.pproject, story_id)
+    pheaders = {'X-TrackerToken': args.ptoken}
+    # pquery = {'filter': 'type:feature,chore,bug AND -state:accepted'}
+    pquery = {}
+    offset = 0
+    response = requests.get(purl, headers=pheaders, params=pquery)
+    assert response.status_code == 200, response.text
+    # total = int(response.headers['x-tracker-pagination-total'])
+    # limit = int(response.headers['x-tracker-pagination-limit'])
+    return response.json()
 
-def _convert_story(pstory, cproject):
+def _convert_story(pstory, args):
+    mytasks = get_tasks(pstory.get('id',''), args)
+    # pprint(mytasks)
     return {
         'name': pstory.get('name', 'Imported from Pivotal Tracker'),
-        'project_id': cproject,
+        'project_id': args.cproject,
         'description': pstory.get('description', ''),
         'external_id': str(pstory.get('id', '')),
         'labels': [_convert_label(plabel) for plabel in pstory.get('labels', [])] + [{'name': 'pivotal'}],
         'story_type': pstory.get('story_type'),
-        'tasks': [_convert_task(ptask) for ptask in pstory.get('tasks', [])],
+        'tasks': [_convert_task(ptask) for ptask in mytasks],
     }
 
 
 def _convert_task(ptask):
+    # pprint(ptask)
+    # pprint(ptask.get('description'))
     return {
         'complete': ptask.get('complete'),
         'description': ptask.get('description'),
@@ -100,3 +118,4 @@ def _convert_label(plabel):
 
 if __name__ == '__main__':
     _run()
+
