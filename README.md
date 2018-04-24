@@ -1,3 +1,5 @@
+**This project is not active. If you need to make changes, please fork it.**
+
 # pivotaltracker-clubhouse
 Simple tool to transfer stories from Pivotal Tracker to Clubhouse.
 
